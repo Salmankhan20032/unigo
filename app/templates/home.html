@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Unigo Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-blue: #3A6FA5;
+      --primary-gradient: linear-gradient(135deg, #3A6FA5, #1DB0E4);
+      --dark-bg: #0A0A0A;
+      --light-bg: #F5F7FA;
+      --card-dark: #1A1A1A;
+      --card-light: #FFFFFF;
+      --sidebar-dark: #141C2F;
+      --text-dark: #E6E6E6;
+      --text-light: #1A1A1A;
+      --input-dark-bg: #2A2A2A;
+      --input-dark-border: #444;
+      --input-light-bg: #FFFFFF;
+      --input-light-border: #D1D5DB;
+      --button-primary-dark: #1A2A44;
+      --button-primary-dark-hover: #1799C3;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.2);
+      --spent-red: #dc3545;
+      --savings-accent: #3A6FA5;
+    }
+    * { font-family: 'Inter', sans-serif; }
+    body.light { background-color: var(--light-bg); color: var(--text-light); }
+    body.dark { background-color: var(--dark-bg); color: var(--text-dark); }
+    #sidebar {
+      min-height: 100vh; background: var(--primary-gradient); transition: transform 0.3s ease;
+      position: fixed; width: 250px; top: 0; left: 0; z-index: 1000; padding: 1rem;
+    }
+    #sidebar.dark { background: linear-gradient(135deg, #141C2F, #1A2A44); }
+    #sidebar.collapsed { transform: translateX(-250px); }
+    .sidebar-toggle {
+      display: none; position: fixed; top: 15px; left: 15px; z-index: 1001;
+      background: var(--primary-blue); border: none; padding: 8px; border-radius: 8px; color: white;
+    }
+    #content {
+      padding: 1.5rem; margin-left: 250px; width: calc(100% - 250px);
+      transition: margin-left 0.3s ease, width 0.3s ease;
+    }
+    #content.full-width { margin-left: 0; width: 100%; }
+    .card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease; border: none; border-radius: 12px;
+      background: var(--card-light); box-shadow: var(--shadow); margin: 1rem 0; padding: 1.5rem;
+    }
+    .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
+    .card.dark { background: var(--card-dark); color: var(--text-dark); }
+    .card.light { background: var(--card-light); color: var(--text-light); }
+    /* Top icons container */
+    .top-icons {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 999;
+    }
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+    }
+    .language-toggle button {
+      border-radius: 20px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      border: 1px solid var(--primary-blue);
+      background: var(--card-light);
+      color: var(--text-light);
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    body.dark .language-toggle button {
+      background: var(--card-dark);
+      color: var(--text-dark);
+      border-color: var(--input-dark-border);
+    }
+    .language-toggle button:hover {
+      background: var(--button-primary-dark-hover);
+      color: white;
+    }
+    .notification-toggle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--card-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-light);
+      border: none;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s ease, background 0.2s ease;
+      cursor: pointer;
+    }
+    .notification-toggle:hover {
+      transform: scale(1.1);
+      background: var(--button-primary-dark-hover);
+      color: white;
+    }
+    body.dark .notification-toggle {
+      background: var(--card-dark);
+      color: var(--text-dark);
+    }
+    .notification-toggle .badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      font-size: 0.7rem;
+      padding: 4px 7px;
+      background-color: var(--spent-red);
+      border: 2px solid var(--card-light);
+      border-radius: 50%;
+    }
+    body.dark .notification-toggle .badge { border-color: var(--card-dark); }
+    .switch {
+      position: relative; display: inline-block; width: 50px; height: 24px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc; transition: .4s; border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute; content: "☀️"; height: 18px; width: 18px; left: 3px; bottom: 3px;
+      background-color: white; transition: .4s; border-radius: 50%; display: flex;
+      align-items: center; justify-content: center; font-size: 12px; color: #f1c40f;
+    }
+    input:checked + .slider { background: var(--button-primary-dark); }
+    input:checked + .slider:before { transform: translateX(26px); content: "🌙"; color: #f1f1f1; }
+    .nav-link {
+      display: flex; align-items: center; height: 48px; width: calc(100% - 16px); padding: 12px 16px;
+      margin: 0.5rem; font-size: 1rem; font-weight: 500; color: white !important;
+      background: rgba(255, 255, 255, 0.1); border-radius: 8px; text-decoration: none;
+      transition: background 0.3s ease, padding-left 0.3s ease;
+    }
+    .nav-link:hover { background: rgba(255, 255, 255, 0.2); padding-left: 20px; }
+    .nav-link i { font-size: 1.2rem; margin-right: 8px; }
+    .weather-card { width: 100%; margin: 1rem 0; }
+    .weather-card .card { padding: 1rem; display: flex; align-items: center; }
+    .weather-card img { width: 40px; height: 40px; margin-right: 1rem; }
+    .weather-card h5 { margin: 0; font-size: 0.9rem; font-weight: 600; }
+    .weather-card p { margin: 0; font-size: 0.8rem; }
+    .btn-primary {
+      border-radius: 20px; padding: 10px 20px; font-weight: 500; background: var(--primary-gradient);
+      border: none; transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    body.dark .btn-primary { background: linear-gradient(135deg, #1A2A44, #1DB0E4); }
+    .btn-primary:hover { transform: scale(1.05); box-shadow: var(--shadow-hover); }
+    #dashboardSection .card { padding: 1.5rem; margin: 1rem 0; display: flex; align-items: center; }
+    #dashboardSection .card h5 { margin: 0; font-size: 1.1rem; font-weight: 600; }
+    #dashboardSection .card p { font-size: 0.9rem; margin: 0; }
+    #dashboardSection .welcome-card h2 { margin-top: 2.5rem; }
+    #dashboardSection .welcome-card p { margin-top: 1rem; }
+    #savingsSection { display: none; }
+    #savingsSection .card.savings-card {
+      border: 2px solid var(--savings-accent); background: var(--card-light);
+    }
+    body.dark #savingsSection .card.savings-card { background: var(--card-dark); }
+    #savingsSection .card.savings-card p.spent { color: var(--spent-red); font-weight: 500; }
+    #savingsSection .table { margin-top: 1rem; }
+    #timetableSection { display: none; }
+    #timetableSection .table { margin-top: 1rem; border-radius: 8px; overflow: hidden; }
+    #timetableSection .table th, #timetableSection .table td { vertical-align: middle; padding: 0.75rem; text-align: center; }
+    #profileSection { display: none; }
+    #profileSection .card { padding: 1.5rem; max-width: 500px; margin: 1rem auto; text-align: center; }
+    #profileSection .profile-pic { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-blue); margin: 0 auto 1rem; display: block; }
+    #shopSection { display: none; }
+    #shopSection .product-card { cursor: pointer; margin: 1rem 0; text-align: center; }
+    #shopSection .product-img { width: 100%; max-height: 150px; object-fit: contain; border-radius: 8px; margin: 0 auto 0.75rem; }
+    #productDetailSection { display: none; }
+    #productDetailSection .product-img { width: 100%; max-height: 60vh; object-fit: cover; border-radius: 12px 0 0 12px; }
+    #productDetailSection .card { min-height: 80vh; border-radius: 12px; display: flex; flex-direction: row; }
+    #productDetailSection .content { padding: 2rem; margin: 1rem; flex: 1; }
+    #productDetailSection .btn-back { margin: 1rem; background: none; border: 1px solid var(--primary-blue); color: var(--primary-blue); padding: 8px 16px; border-radius: 20px; }
+    #productDetailSection .btn-back:hover { background: var(--primary-blue); color: white; }
+    #exploreSection { display: none; }
+    .post-container {
+      max-height: calc(100vh - 100px); overflow-y: auto; scroll-snap-type: y mandatory;
+      scrollbar-width: none; -ms-overflow-style: none; padding: 0; margin: 0;
+    }
+    .post-container::-webkit-scrollbar { display: none; }
+    .post-card {
+      padding: 1rem; margin: 0 auto 2rem auto; max-width: 550px; width: 100%; scroll-snap-align: start;
+      border-radius: 0; box-shadow: none; border-bottom: 1px solid var(--input-light-border);
+    }
+    body.dark .post-card { border-bottom: 1px solid var(--input-dark-border); }
+    .post-header { display: flex; align-items: center; padding: 0.5rem; gap: 0.5rem; }
+    .post-header img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+    .post-header span { font-weight: 500; font-size: 0.9rem; }
+    .post-img, .post-text {
+      width: 100%; max-height: 350px; object-fit: contain; aspect-ratio: 1/1; display: block;
+      max-width: 350px; margin: 0.5rem auto; border-radius: 8px;
+    }
+    .post-text {
+      display: flex; align-items: center; justify-content: center; padding: 1rem; font-size: 0.9rem;
+      text-align: center; background: var(--card-light); border: 1px solid var(--input-light-border);
+    }
+    body.dark .post-text { background: var(--card-dark); border: 1px solid var(--input-dark-border); }
+    .post-timestamp { padding: 0.5rem; font-size: 0.85rem; color: var(--text-light); text-align: center; }
+    body.dark .post-timestamp { color: var(--text-dark); }
+    .post-interactions {
+      display: flex; align-items: center; justify-content: space-between; padding: 0.5rem;
+    }
+    .post-interactions .like-container {
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .post-interactions i { font-size: 1.2rem; cursor: pointer; }
+    .like-heart.liked { color: var(--spent-red); }
+    .post-interactions span { font-size: 0.9rem; }
+    .post-comments { padding: 0.5rem; max-height: 200px; overflow-y: auto; }
+    .comment-item { display: flex; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.5rem; }
+    .comment-item img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
+    .comment-item span { font-weight: 500; font-size: 0.85rem; }
+    .comment-item p { font-size: 0.85rem; margin: 0; }
+    .comment-form { display: flex; gap: 0.5rem; margin-top: 0.5rem; align-items: center; }
+    .comment-form input { flex: 1; border-radius: 20px; padding: 0.5rem; }
+    .comment-form input::placeholder { color: #6c757d; }
+    body.dark .comment-form input { background: var(--input-dark-bg); color: var(--text-dark); border-color: var(--input-dark-border); }
+    body.dark .comment-form input::placeholder { color: #adb5bd; }
+    .comment-form button { border-radius: 20px; padding: 0.5rem 1rem; }
+    .notification-dropdown {
+      display: none; position: fixed; top: 60px; right: 15px; width: 300px; max-width: 90vw;
+      background: var(--card-light); border-radius: 8px; box-shadow: var(--shadow); z-index: 1000;
+      max-height: 400px; overflow-y: auto;
+    }
+    body.dark .notification-dropdown { background: var(--card-dark); }
+    .notification-item { padding: 0.75rem; border-bottom: 1px solid var(--input-light-border); }
+    body.dark .notification-item { border-bottom: 1px solid var(--input-dark-border); }
+    .notification-item:last-child { border-bottom: none; }
+    .notification-item p { margin: 0; font-size: 0.85rem; color: var(--text-light); }
+    body.dark .notification-item p { color: var(--text-dark); }
+    .notification-item .text-success { color: #28a745 !important; }
+    .notification-item .text-danger { color: var(--spent-red) !important; }
+    .alert { margin: 1rem 0; position: relative; padding: 1rem 2rem 1rem 1.5rem; }
+    .alert .btn-close { position: absolute; top: 50%; right: 0.5rem; transform: translateY(-50%); }
+    body.dark .form-control, body.dark .form-select { background: var(--input-dark-bg); color: var(--text-dark); border-color: var(--input-dark-border); }
+    body.light .form-control, body.light .form-select { background: var(--input-light-bg); color: var(--text-light); border-color: var(--input-light-border); }
+    .welcome-card { padding: 1.5rem; margin: 1rem 0; text-align: center; }
+    @media (max-width: 768px) {
+      #sidebar { transform: translateX(-250px); }
+      #sidebar.active { transform: translateX(0); }
+      .sidebar-toggle { display: block; }
+      #content { margin-left: 0; width: 100%; padding: 1rem; }
+      .top-icons { top: 60px; right: 15px; }
+      .notification-toggle, .language-toggle button, .theme-toggle { transform: scale(0.9); }
+      .post-img, .post-text { width: 100%; max-width: none; height: auto; max-height: 400px; }
+      .post-card { max-width: 100%; margin-bottom: 1rem; padding: 0.75rem; }
+      #productDetailSection .product-img { border-radius: 12px 12px 0 0; max-height: 40vh; }
+      #productDetailSection .card { flex-direction: column; }
+      #productDetailSection .content { padding: 1.5rem; margin: 0.5rem; }
+      #dashboardSection .card { flex-direction: column; text-align: center; }
+      #timetableSection .table th, #timetableSection .table td { font-size: 0.85rem; padding: 0.5rem; }
+    }
+  </style>
+</head>
+<body class="light">
+  <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+  <div class="top-icons">
+    <div class="theme-toggle">
+      <label class="switch">
+        <input type="checkbox" id="themeSwitch" onchange="toggleTheme()">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="language-toggle">
+      <button id="languageSwitch" class="btn btn-sm" onclick="toggleLanguage()">EN</button>
+    </div>
+    <div class="notification-toggle">
+      <button id="notificationButton" onclick="toggleNotifications()">
+        <i class="bi bi-bell"></i>
+        {% if notifications %}
+          <span class="badge bg-danger">{{ notifications|length }}</span>
+        {% endif %}
+      </button>
+      <div class="notification-dropdown" id="notificationDropdown">
+        {% for notification in notifications %}
+          <div class="notification-item">
+            <p>
+              {{ notification.message|slice:":40" }}
+              {% if notification.status == "accepted" %}
+                <span class="text-success fw-bold" data-i18n="accepted">Accepted</span>
+              {% elif notification.status == "declined" %}
+                <span class="text-danger fw-bold" data-i18n="declined">Declined</span>
+              {% endif %}
+              {{ notification.message|slice:"40:" }}
+            </p>
+            {% if notification.status == "pending" and notification.recipient == user %}
+              <form method="POST" action="{% url 'handle_notification' notification.id %}" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="accept">
+                <button type="submit" class="btn btn-success btn-sm" data-i18n="accept">Accept</button>
+              </form>
+              <form method="POST" action="{% url 'handle_notification' notification.id %}" style="display:inline;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="decline">
+                <button type="submit" class="btn btn-danger btn-sm" data-i18n="decline">Decline</button>
+              </form>
+            {% else %}
+              <small>{{ notification.created_at|date:"Y-m-d H:i" }}</small>
+            {% endif %}
+          </div>
+        {% empty %}
+          <div class="notification-item">
+            <p data-i18n="noNotifications">No notifications</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="container-fluid">
+    <div class="row">
+      <div id="sidebar">
+        <div class="d-flex flex-column align-items-start p-3 text-white">
+          <h4 class="mb-3"><i class="bi bi-globe"></i> <span data-i18n="appName">UniGo</span></h4>
+          <div id="weatherWidget" class="weather-card">
+            <div class="card light">
+              <img src="https://cdn-icons-png.flaticon.com/512/1163/1163624.png" alt="Clear Sky">
+              <div>
+                <h5>Konya</h5>
+                <p id="weatherDescription" data-i18n="clearSky">Clear Sky</p>
+                <p id="temperature">Temperature: 21°C</p>
+              </div>
+            </div>
+          </div>
+          <a href="{% url 'home' %}" class="nav-link" data-section="dashboard"><i class="bi bi-house"></i> <span data-i18n="home">Home</span></a>
+          <a href="{% url 'profile' %}" class="nav-link" data-section="profile"><i class="bi bi-person-circle"></i> <span data-i18n="profile">Profile</span></a>
+          <a href="{% url 'timetable' %}" class="nav-link" data-section="timetable"><i class="bi bi-calendar2-week"></i> <span data-i18n="timetable">TimeTable</span></a>
+          <a href="{% url 'explore' %}" class="nav-link" data-section="explore"><i class="bi bi-search"></i> <span data-i18n="explore">Explore</span></a>
+          <a href="{% url 'savings' %}" class="nav-link" data-section="savings"><i class="bi bi-piggy-bank"></i> <span data-i18n="savings">Savings</span></a>
+          <a href="{% url 'shop' %}" class="nav-link" data-section="shop"><i class="bi bi-bag"></i> <span data-i18n="shop">Shop</span></a>
+          <a href="{% url 'logout' %}" class="nav-link"><i class="bi bi-box-arrow-right"></i> <span data-i18n="logout">Logout</span></a>
+        </div>
+      </div>
+      <div id="content">
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+        <div id="dashboardSection" {% if section == 'dashboard' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
+          <div class="card light welcome-card">
+            <h2 data-i18n="welcome">Welcome</h2>
+            <p class="mb-0">{{ user.username }}</p>
+          </div>
+          <div class="row g-3">
+            <div class="col-md-4 col-sm-6">
+              <div class="card light">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-currency-dollar"></i>
+                  <div>
+                    <h5 data-i18n="savingsThisMonth">Savings This Month</h5>
+                    <p class="mb-0">₺ {{ savings|floatformat:2 }} <span data-i18n="savingsAmount">saved so far.</span></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+              <div class="card light">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-clock-history"></i>
+                  <div>
+                    <h5 data-i18n="daysUntilExam">Days Until Exam</h5>
+                    <p class="mb-0">{{ days_until_exam }} <span data-i18n="examDays">days remaining</span></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+              <div class="card light">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-book-half"></i>
+                  <div>
+                    <h5 data-i18n="coursesCompleted">Courses Completed</h5>
+                    <p class="mb-0">{{ course_completion|floatformat:1 }}% <span data-i18n="coursesProgress">done</span></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+        
+      
+          </div>
+        </div>
+        <div id="profileSection" {% if section == 'profile' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
+          <h2 class="mb-4" data-i18n="profile">Profile</h2>
+          <div class="card light">
+            <div class="text-center">
+              {% if user_profile.profile_picture %}
+                <img src="{{ user_profile.profile_picture.url }}" alt="Profile Picture" class="profile-pic">
+              {% else %}
+                <img src="https://srmistvdp.edu.in/wp-content/uploads/2024/07/dummy-profile-pic-female-300n300.jpeg" alt="Default Profile Picture" class="profile-pic">
+              {% endif %}
+              <h3 class="mt-2">{{ user.username }}</h3>
+              <p>{{ user_profile.university_name|default:"No university specified" }}</p>
+            </div>
+            <form method="POST" enctype="multipart/form-data">
+              {% csrf_token %}
+              <div class="mb-3">
+                <label for="university_name" class="form-label" data-i18n="universityName">University Name</label>
+                <input type="text" class="form-control" id="university_name" name="university_name" value="{{ user_profile.university_name }}">
+              </div>
+              <div class="mb-3">
+                <label for="profile_picture" class="form-label" data-i18n="profilePicture">Profile Picture</label>
+                <input type="file" class="form-control" id="profile_picture" name="profile_picture" accept="image/*">
+              </div>
+              <button type="submit" class="btn btn-primary" data-i18n="updateProfile">Update Profile</button>
+            </form>
+          </div>
+        </div>
+        <div id="timetableSection" {% if section == 'timetable' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
+          <h2 class="mb-4" data-i18n="timetable">TimeTable</h2>
+          <div class="card light">
+            <h5 data-i18n="addTimetableEntry">Add Timetable Entry</h5>
+            <form method="POST" action="{% url 'timetable' %}">
+              {% csrf_token %}
+              {% if error %}
+                <div class="alert alert-danger" role="alert">{{ error }}</div>
+              {% endif %}
+              <div class="mb-3">
+                <label for="subject" class="form-label" data-i18n="subject">Subject</label>
+                <input type="text" class="form-control" id="subject" name="subject" required>
+              </div>
+              <div class="mb-3">
+                <label for="day" class="form-label" data-i18n="day">Day</label>
+                <select class="form-select" id="day" name="day" required>
+                  <option value="Monday" data-i18n="monday">Monday</option>
+                  <option value="Tuesday" data-i18n="tuesday">Tuesday</option>
+                  <option value="Wednesday" data-i18n="wednesday">Wednesday</option>
+                  <option value="Thursday" data-i18n="thursday">Thursday</option>
+                  <option value="Friday" data-i18n="friday">Friday</option>
+                  <option value="Saturday" data-i18n="saturday">Saturday</option>
+                  <option value="Sunday" data-i18n="sunday">Sunday</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="time" class="form-label" data-i18n="time">Time</label>
+                <input type="time" class="form-control" id="time" name="time" required>
+              </div>
+              <div class="mb-3">
+                <label for="exam_date" class="form-label" data-i18n="examDate">Exam Date</label>
+                <input type="date" class="form-control" id="exam_date" name="exam_date">
+              </div>
+              <button type="submit" class="btn btn-primary" data-i18n="add">Add</button>
+            </form>
+          </div>
+          <div class="card light mt-3">
+            <h5 data-i18n="yourTimetable">Your Timetable</h5>
+            {% if timetables %}
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th data-i18n="subject">Subject</th>
+                    <th data-i18n="day">Day</th>
+                    <th data-i18n="time">Time</th>
+                    <th data-i18n="examDate">Exam Date</th>
+                    <th data-i18n="completed">Completed</th>
+                    <th data-i18n="action">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for timetable in timetables %}
+                    <tr>
+                      <td>{{ timetable.subject }}</td>
+                      <td data-i18n="{{ timetable.day|lower }}">{{ timetable.day }}</td>
+                      <td>{{ timetable.time }}</td>
+                      <td>{{ timetable.exam_date|date:"Y-m-d"|default:"—" }}</td>
+                      <td>
+                        <form method="POST" action="{% url 'timetable' %}">
+                          {% csrf_token %}
+                          <input type="hidden" name="toggle_completed_id" value="{{ timetable.id }}">
+                          <input type="checkbox" name="is_completed" {% if timetable.is_completed %}checked{% endif %} onchange="this.form.submit()">
+                        </form>
+                      </td>
+                      <td>
+                        <form method="POST" action="{% url 'timetable' %}">
+                          {% csrf_token %}
+                          <input type="hidden" name="delete_id" value="{{ timetable.id }}">
+                          <button type="submit" class="btn btn-danger btn-sm" data-i18n="delete">Delete</button>
+                        </form>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <p data-i18n="noTimetableEntries">No timetable entries yet.</p>
+            {% endif %}
+          </div>
+        </div>
+        <div id="exploreSection" {% if section == 'explore' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
+          <h2 class="mb-4" data-i18n="explore">Explore</h2>
+          <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#postModal" data-i18n="createPost">Create Post</button>
+          <div class="modal fade" id="postModal" tabindex="-1" aria-labelledby="postModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="postModalLabel" data-i18n="createPost">Create Post</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="POST" action="{% url 'create_post' %}" enctype="multipart/form-data">
+                  {% csrf_token %}
+                  <div class="modal-body">
+                    <div class="mb-3">
+                      <label for="post_text" class="form-label" data-i18n="postText">Text</label>
+                      <textarea class="form-control" id="post_text" name="text" rows="4"></textarea>
+                    </div>
+                    <div class="mb-3">
+                      <label for="post_image" class="form-label" data-i18n="postImage">Image</label>
+                      <input type="file" class="form-control" id="post_image" name="image" accept="image/*">
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="close">Close</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="post">Post</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          <div class="post-container">
+            {% for post in posts %}
+              <div class="card post-card light">
+                <div class="post-header">
+                  {% if post.user.userprofile.profile_picture %}
+                    <img src="{{ post.user.userprofile.profile_picture.url }}" alt="{{ post.user.username }}">
+                  {% else %}
+                    <img src="https://srmistvdp.edu.in/wp-content/uploads/2024/07/dummy-profile-pic-female-300n300.jpeg" alt="Default Profile">
+                  {% endif %}
+                  <span>{{ post.user.username }}</span>
+                </div>
+                {% if post.image %}
+                  <img src="{{ post.image.url }}" alt="Post Image" class="post-img">
+                {% else %}
+                  <div class="post-text">{{ post.text }}</div>
+                {% endif %}
+                <div class="post-timestamp">
+                  <span data-i18n="posted">Posted</span>: {{ post.created_at|date:"Y-m-d H:i" }}
+                </div>
+                <div class="post-interactions">
+                  <div class="like-container">
+                    <i class="bi {% if post.is_liked %}bi-heart-fill liked{% else %}bi-heart{% endif %} like-heart" data-post-id="{{ post.id }}" onclick="toggleLike({{ post.id }}, this)"></i>
+                    <span class="like-count" data-post-id="{{ post.id }}">{{ post.like_count }}</span>
+                  </div>
+                  <i class="bi bi-chat" onclick="document.getElementById('comment-input-{{ post.id }}').focus()"></i>
+                </div>
+                <div class="post-comments" id="comments-{{ post.id }}">
+                  {% for comment in post.comment_set.all %}
+                    <div class="comment-item" id="comment-{{ comment.id }}">
+                      {% if comment.user.userprofile.profile_picture %}
+                        <img src="{{ comment.user.userprofile.profile_picture.url }}" alt="{{ comment.user.username }}">
+                      {% else %}
+                        <img src="https://srmistvdp.edu.in/wp-content/uploads/2024/07/dummy-profile-pic-female-300n300.jpeg" alt="Default Profile">
+                      {% endif %}
+                      <div>
+                        <span>{{ comment.user.username }}</span>
+                        <p>{{ comment.text }}</p>
+                      </div>
+                    </div>
+                  {% empty %}
+                    <p data-i18n="noComments">No comments yet.</p>
+                  {% endfor %}
+                </div>
+                <form class="comment-form" id="comment-form-{{ post.id }}" onsubmit="addComment({{ post.id }}, this); return false;">
+                  <input type="text" id="comment-input-{{ post.id }}" name="text" class="form-control" placeholder="Add a comment..." data-i18n-placeholder="comment" required>
+                  <button type="submit" class="btn btn-primary btn-sm" data-i18n="comment">Comment</button>
+                </form>
+              </div>
+            {% empty %}
+              <p data-i18n="noPosts">No posts available.</p>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="savingsSection" {% if section == 'savings' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
+          <h2 class="mb-4" data-i18n="savings">Savings</h2>
+          <div class="card light">
+            <h5 data-i18n="setTotalMoney">Set Total Money</h5>
+            <form method="POST" action="{% url 'savings' %}">
+              {% csrf_token %}
+              {% if error %}
+                <div class="alert alert-danger" role="alert">{{ error }}</div>
+              {% endif %}
+              <div class="mb-3">
+                <label for="total_money" class="form-label" data-i18n="totalMoney">Total Money (₺)</label>
+                <input type="number" step="0.01" class="form-control" id="total_money" name="total_money" value="{{ savings_obj.total_money|floatformat:2 }}" required>
+              </div>
+              <button type="submit" class="btn btn-primary" data-i18n="proceed">Proceed</button>
+            </form>
+          </div>
+          <div class="card light mt-3">
+            <h5 data-i18n="addExpense">Add Expense</h5>
+            <form method="POST" action="{% url 'savings' %}">
+              {% csrf_token %}
+              <div class="mb-3">
+                <label for="expense_name" class="form-label" data-i18n="expenseName">Expense Name</label>
+                <input type="text" class="form-control" id="expense_name" name="expense_name" required>
+              </div>
+              <div class="mb-3">
+                <label for="expense_amount" class="form-label" data-i18n="expenseAmount">Amount (₺)</label>
+                <input type="number" step="0.01" class="form-control" id="expense_amount" name="expense_amount" required>
+              </div>
+              <button type="submit" class="btn btn-primary" data-i18n="add">Add</button>
+            </form>
+          </div>
+          <div class="card savings-card mt-3">
+            <h5 data-i18n="savingsSummary">Savings Summary</h5>
+            <p><strong data-i18n="totalMoney">Total Money</strong>: ₺ {{ total_money|floatformat:2 }}</p>
+            <p><strong data-i18n="savingsAmount">Savings</strong>: ₺ {{ savings|floatformat:2 }}</p>
+            <p class="spent"><strong data-i18n="spentThisMonth">Spent This Month</strong>: ₺ {{ total_expenses|floatformat:2 }}</p>
+          </div>
+          {% if expenses %}
+            <div class="card light mt-3">
+              <h5 data-i18n="expenseList">Expense List</h5>
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th data-i18n="expenseName">Name</th>
+                    <th data-i18n="expenseAmount">Amount</th>
+                    <th data-i18n="date">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for expense in expenses %}
+                    <tr>
+                      <td>{{ expense.name }}</td>
+                      <td>₺ {{ expense.amount|floatformat:2 }}</td>
+                      <td>{{ expense.created_at|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% endif %}
+        </div>
+        <div id="shopSection" {% if section == 'shop' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
+          <h2 class="mb-4" data-i18n="shop">Shop</h2>
+          <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#productModal" data-i18n="postProduct">Post Product</button>
+          <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="productModalLabel" data-i18n="postProduct">Post a Product</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="POST" action="{% url 'shop' %}" enctype="multipart/form-data">
+                  {% csrf_token %}
+                  <div class="modal-body">
+                    <div class="mb-3">
+                      <label for="name" class="form-label" data-i18n="productName">Product Name</label>
+                      <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                      <label for="price" class="form-label" data-i18n="price">Price (₺)</label>
+                      <input type="number" step="0.01" class="form-control" id="price" name="price" required>
+                    </div>
+                    <div class="mb-3">
+                      <label for="city" class="form-label" data-i18n="city">City</label>
+                      <input type="text" class="form-control" id="city" name="city" required>
+                    </div>
+                    <div class="mb-3">
+                      <label for="country" class="form-label" data-i18n="country">Country</label>
+                      <input type="text" class="form-control" id="country" name="country" required>
+                    </div>
+                    <div class="mb-3">
+                      <label for="description" class="form-label" data-i18n="description">Description</label>
+                      <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                      <label for="image" class="form-label" data-i18n="productImage">Product Image</label>
+                      <input type="file" class="form-control" id="image" name="image" accept="image/*">
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="close">Close</button>
+                    <button type="submit" class="btn btn-primary" data-i18n="post">Post</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          <div class="row g-3">
+            {% for product in products %}
+              <div class="col-md-3 col-sm-6">
+                <a href="{% url 'product_detail' product.id %}" class="card product-card light text-decoration-none">
+                  <div class="p-3">
+                    {% if product.image %}
+                      <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-img">
+                    {% else %}
+                      <img src="https://srmistvdp.edu.in/wp-content/uploads/2024/07/dummy-profile-pic-female-300n300.jpeg" alt="No Image" class="product-img">
+                    {% endif %}
+                    <h5>{{ product.name }}</h5>
+                    <p data-i18n="price">Price: ₺{{ product.price|floatformat:2 }}</p>
+                    <p>{{ product.city }}, {{ product.country }}</p>
+                    <p><span data-i18n="posted">Posted</span>: {{ product.created_at|date:"Y-m-d H:i" }}</p>
+                  </div>
+                </a>
+              </div>
+            {% empty %}
+              <p data-i18n="noProducts">No products available.</p>
+            {% endfor %}
+          </div>
+        </div>
+        <div id="productDetailSection" {% if section == 'product_detail' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
+          <a href="{% url 'shop' %}" class="btn-back" data-i18n="backToShop">Back to Shop</a>
+          <div class="card light">
+            {% if product %}
+              <div class="row g-0">
+                <div class="col-md-6">
+                  {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-img">
+                  {% else %}
+                    <img src="https://srmistvdp.edu.in/wp-content/uploads/2024/07/dummy-profile-pic-female-300n300.jpeg" alt="No Image" class="product-img">
+                  {% endif %}
+                </div>
+                <div class="col-md-6 content">
+                  <h3>{{ product.name }}</h3>
+                  <p><strong data-i18n="seller">Seller</strong>: {{ product.seller.username }}</p>
+                  <p><strong data-i18n="price">Price</strong>: ₺{{ product.price|floatformat:2 }}</p>
+                  <p><strong data-i18n="location">Location</strong>: {{ product.city }}, {{ product.country }}</p>
+                  <p><strong data-i18n="description">Description</strong>: {{ product.description }}</p>
+                  <p><strong data-i18n="posted">Posted</strong>: {{ product.created_at|date:"Y-m-d H:i" }}</p>
+                  {% if product.seller != user %}
+                    <form method="POST" action="{% url 'purchase_product' product.id %}">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-primary" data-i18n="shopButton">Request Purchase</button>
+                    </form>
+                  {% else %}
+                    <p class="text-muted" data-i18n="ownProduct">This is your product.</p>
+                  {% endif %}
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let currentLanguage = localStorage.getItem("language") || "en";
+    let currentTheme = localStorage.getItem("theme") || "light";
+    const translations = {
+      en: {
+        appName: "UniGo", home: "Home", profile: "Profile", timetable: "TimeTable", explore: "Explore",
+        savings: "Savings", shop: "Shop", logout: "Logout", welcome: "Welcome", savingsThisMonth: "Savings This Month",
+        savingsAmount: "saved so far.", daysUntilExam: "Days Until Exam", examDays: "days remaining",
+        coursesCompleted: "Courses Completed", coursesProgress: "done", addTimetableEntry: "Add Timetable Entry",
+        subject: "Subject", day: "Day", time: "Time", examDate: "Exam Date", completed: "Completed",
+        add: "Add", yourTimetable: "Your Timetable", action: "Action", delete: "Delete",
+        noTimetableEntries: "No timetable entries yet.", monday: "Monday", tuesday: "Tuesday",
+        wednesday: "Wednesday", thursday: "Thursday", friday: "Friday", saturday: "Saturday",
+        sunday: "Sunday", clearSky: "Clear Sky", universityName: "University Name",
+        profilePicture: "Profile Picture", updateProfile: "Update Profile", noProducts: "No products available.",
+        shopButton: "Request Purchase", noNotifications: "No notifications", accept: "Accept", decline: "Decline",
+        postProduct: "Post a Product", productName: "Product Name", price: "Price", city: "City",
+        country: "Country", description: "Description", productImage: "Product Image", post: "Post",
+        seller: "Seller", location: "Location", backToShop: "Back to Shop", close: "Close",
+        createPost: "Create Post", postText: "Text", postImage: "Image", noPosts: "No posts available.",
+        noComments: "No comments yet.", comment: "Comment", ownProduct: "This is your product.",
+        posted: "Posted", setTotalMoney: "Set Total Money", totalMoney: "Total Money", proceed: "Proceed",
+        addExpense: "Add Expense", expenseName: "Expense Name", expenseAmount: "Amount", savingsSummary: "Savings Summary",
+        spentThisMonth: "Spent This Month", expenseList: "Expense List", date: "Date"
+      },
+      tr: {
+        appName: "UniGo", home: "Ana Sayfa", profile: "Profil", timetable: "Ders Programı", explore: "Keşfet",
+        savings: "Tasarruflar", shop: "Mağaza", logout: "Çıkış Yap", welcome: "Hoş Geldiniz",
+        savingsThisMonth: "Bu Ayki Tasarruflar", savingsAmount: "Şimdiye kadar tasarruf edildi.",
+        daysUntilExam: "Sınava Kalan Gün", examDays: "gün kaldı", coursesCompleted: "Tamamlanan Kurslar",
+        coursesProgress: "tamamlandı", addTimetableEntry: "Ders Programı Girişi Ekle", subject: "Ders",
+        day: "Gün", time: "Saat", examDate: "Sınav Tarihi", completed: "Tamamlandı", add: "Ekle",
+        yourTimetable: "Ders Programınız", action: "Eylem", delete: "Sil",
+        noTimetableEntries: "Henüz ders programı girişi yok.", monday: "Pazartesi", tuesday: "Salı",
+        wednesday: "Çarşamba", thursday: "Perşembe", friday: "Cuma", saturday: "Cumartesi",
+        sunday: "Pazar", clearSky: "Açık Gökyüzü", universityName: "Üniversite Adı",
+        profilePicture: "Profil Resmi", updateProfile: "Profili Güncelle", noProducts: "Ürün bulunamadı.",
+        shopButton: "Satın Alma Talebi", noNotifications: "Bildirim yok", accept: "Kabul Et", decline: "Reddet",
+        postProduct: "Ürün İlanı Ver", productName: "Ürün Adı", price: "Fiyat", city: "Şehir",
+        country: "Ülke", description: "Açıklama", productImage: "Ürün Resmi", post: "İlan Ver",
+        seller: "Satıcı", location: "Konum", backToShop: "Mağazaya Geri Dön", close: "Kapat",
+        createPost: "Gönderi Oluştur", postText: "Metin", postImage: "Resim", noPosts: "Gönderi bulunamadı.",
+        noComments: "Henüz yorum yok.", comment: "Yorum Yap", ownProduct: "Bu sizin ürününüz.",
+        posted: "Yayınlandı", setTotalMoney: "Toplam Parayı Ayarlayın", totalMoney: "Toplam Para",
+        proceed: "Devam Et", addExpense: "Gider Ekle", expenseName: "Gider Adı", expenseAmount: "Tutar",
+        savingsSummary: "Tasarruf Özeti", spentThisMonth: "Bu Ay Harcanan", expenseList: "Gider Listesi", date: "Tarih"
+      }
+    };
+    function applyTheme() {
+      document.body.className = currentTheme;
+      document.getElementById("sidebar").className = currentTheme === "dark" ? "dark" : "";
+      document.querySelectorAll(".card").forEach(card => {
+        card.className = card.classList.contains("product-card") ? `card product-card ${currentTheme} text-decoration-none` :
+          card.classList.contains("post-card") ? `card post-card ${currentTheme}` :
+          card.classList.contains("savings-card") ? `card savings-card ${currentTheme}` :
+          card.classList.contains("welcome-card") ? `card welcome-card ${currentTheme}` :
+          `card ${currentTheme}`;
+      });
+      localStorage.setItem("theme", currentTheme);
+    }
+    function toggleTheme() {
+      currentTheme = currentTheme === "light" ? "dark" : "light";
+      applyTheme();
+    }
+    function applyTranslations() {
+      document.querySelectorAll("[data-i18n]").forEach(elem => {
+        const key = elem.getAttribute("data-i18n");
+        if (translations[currentLanguage][key]) {
+          elem.textContent = translations[currentLanguage][key];
+        }
+      });
+      document.querySelectorAll("[data-i18n-placeholder]").forEach(elem => {
+        const key = elem.getAttribute("data-i18n-placeholder");
+        if (translations[currentLanguage][key]) {
+          elem.placeholder = translations[currentLanguage][key];
+        }
+      });
+      document.getElementById("languageSwitch").textContent = currentLanguage === "en" ? "TR" : "EN";
+      localStorage.setItem("language", currentLanguage);
+    }
+    function toggleLanguage() {
+      currentLanguage = currentLanguage === "en" ? "tr" : "en";
+      applyTranslations();
+    }
+    function toggleSidebar() {
+      const sidebar = document.getElementById("sidebar");
+      const content = document.getElementById("content");
+      sidebar.classList.toggle("active");
+      content.classList.toggle("full-width");
+    }
+    function toggleNotifications() {
+      const dropdown = document.getElementById("notificationDropdown");
+      dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+    }
+    document.addEventListener("click", (e) => {
+      const dropdown = document.getElementById("notificationDropdown");
+      const button = document.getElementById("notificationButton");
+      if (!dropdown.contains(e.target) && !button.contains(e.target)) {
+        dropdown.style.display = "none";
+      }
+    });
+    async function showSection(sectionId, url) {
+      document.querySelectorAll("#content > div").forEach(div => {
+        div.style.display = div.id === sectionId ? "block" : "none";
+      });
+      try {
+        const response = await fetch(url, {
+          headers: { "X-Requested-With": "XMLHttpRequest" }
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = data.html;
+        const newContent = tempDiv.querySelector("#content").innerHTML;
+        document.getElementById("content").innerHTML = newContent;
+        applyTranslations();
+        applyTheme();
+        document.querySelectorAll(".nav-link").forEach(link => {
+          link.addEventListener("click", async (e) => {
+            e.preventDefault();
+            const section = link.getAttribute("data-section");
+            if (section) {
+              await showSection(section + "Section", link.href);
+              window.history.pushState({}, "", link.href);
+            } else {
+              window.location.href = link.href;
+            }
+          });
+        });
+      } catch (error) {
+        console.error("Failed to load section:", error);
+      }
+    }
+    document.addEventListener("DOMContentLoaded", () => {
+      applyTheme();
+      applyTranslations();
+      showSection("{{ section|default:'dashboard' }}Section", "{{ request.path }}");
+      document.querySelectorAll(".nav-link").forEach(link => {
+        link.addEventListener("click", async (e) => {
+          e.preventDefault();
+          const section = link.getAttribute("data-section");
+          if (section) {
+            await showSection(section + "Section", link.href);
+            window.history.pushState({}, "", link.href);
+          } else {
+            window.location.href = link.href;
+          }
+        });
+      });
+    });
+    async function toggleLike(postId, element) {
+      try {
+        const response = await fetch(`/like_post/${postId}/`, {
+          method: "POST",
+          headers: { 
+            "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest"
+          },
+          body: JSON.stringify({})
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        if (data.success) {
+          element.classList.toggle("bi-heart");
+          element.classList.toggle("bi-heart-fill");
+          element.classList.toggle("liked", data.liked);
+          document.querySelector(`.like-count[data-post-id='${postId}']`).textContent = data.like_count;
+        } else {
+          console.error("Failed to toggle like:", data.error);
+        }
+      } catch (error) {
+        console.error("Failed to toggle like:", error);
+      }
+    }
+    async function addComment(postId, form) {
+      try {
+        const textInput = form.querySelector("input[name='text']");
+        const text = textInput.value.trim();
+        if (!text) return;
+        const response = await fetch(`/comment_post/${postId}/`, {
+          method: "POST",
+          headers: { 
+            "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value,
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest"
+          },
+          body: JSON.stringify({ text: text })
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        if (data.success) {
+          const commentsDiv = document.getElementById(`comments-${postId}`);
+          const commentDiv = document.createElement("div");
+          commentDiv.className = "comment-item";
+          commentDiv.id = `comment-${data.comment_id}`;
+          commentDiv.innerHTML = `
+            <img src="${data.user_profile_picture}" alt="${data.username}">
+            <div>
+              <span>${data.username}</span>
+              <p>${data.text}</p>
+            </div>
+          `;
+          commentsDiv.querySelector("p[data-i18n='noComments']")?.remove();
+          commentsDiv.appendChild(commentDiv);
+          textInput.value = "";
+        } else {
+          console.error("Failed to add comment:", data.error);
+        }
+      } catch (error) {
+        console.error("Failed to add comment:", error);
+      }
+    }
+  </script>
+</body>
+</html>
