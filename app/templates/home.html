@@ -36,7 +36,7 @@
       min-height: 100vh; background: var(--primary-gradient); transition: transform 0.3s ease;
       position: fixed; width: 250px; top: 0; left: 0; z-index: 1000; padding: 1rem;
     }
-    #sidebar.dark { background: linear-gradient(135deg, #141C2F, #1A2A44); }
+    body.dark #sidebar { background: linear-gradient(135deg, #141C2F, #1A2A44); }
     #sidebar.collapsed { transform: translateX(-250px); }
     .sidebar-toggle {
       display: none; position: fixed; top: 15px; left: 15px; z-index: 1001;
@@ -46,14 +46,14 @@
       padding: 1.5rem; margin-left: 250px; width: calc(100% - 250px);
       transition: margin-left 0.3s ease, width 0.3s ease;
     }
-    #content.full-width { margin-left: 0; width: 100%; }
+    #content.full-width { margin-left: magnitude: 0; width: 100%; }
     .card {
       transition: transform 0.3s ease, box-shadow 0.3s ease; border: none; border-radius: 12px;
       background: var(--card-light); box-shadow: var(--shadow); margin: 1rem 0; padding: 1.5rem;
     }
     .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
-    .card.dark { background: var(--card-dark); color: var(--text-dark); }
-    .card.light { background: var(--card-light); color: var(--text-light); }
+    body.dark .card { background: var(--card-dark); color: var(--text-dark); }
+    body.light .card { background: var(--card-light); color: var(--text-light); }
     /* Top icons container */
     .top-icons {
       position: fixed;
@@ -275,7 +275,7 @@
     </div>
     <div class="notification-toggle">
       <button id="notificationButton" onclick="toggleNotifications()">
-        <i class="bi bi-bell"></i>admin
+        <i class="bi bi-bell"></i>
         {% if notifications %}
           <span class="badge bg-danger">{{ notifications|length }}</span>
         {% endif %}
@@ -387,8 +387,6 @@
                 </div>
               </div>
             </div>
-        
-      
           </div>
         </div>
         <div id="profileSection" {% if section == 'profile' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
@@ -431,7 +429,9 @@
                 <input type="text" class="form-control" id="subject" name="subject" required>
               </div>
               <div class="mb-3">
-                <label for="day" class="form-label" data-i18n="day">Day</label>
+                <label for="
+
+day" class="form-label" data-i18n="day">Day</label>
                 <select class="form-select" id="day" name="day" required>
                   <option value="Monday" data-i18n="monday">Monday</option>
                   <option value="Tuesday" data-i18n="tuesday">Tuesday</option>
@@ -555,12 +555,11 @@
                 </div>
                 <div class="post-comments" id="comments-{{ post.id }}">
                   {% for comment in post.comment_set.all %}
-                    <div class="comment-item" id="comment-{{ comment.id }}">
-                      {% if comment.user.userprofile.profile_picture %}
-                        <img src="{{ comment.user.userprofile.profile_picture.url }}" alt="{{ comment.user.username }}">
-                      {% else %}
-                        <img src="https://srmistvdp.edu.in/wp-content/uploads/2024/07/dummy-profile-pic-female-300n300.jpeg" alt="Default Profile">
-                      {% endif %}
+                    <div class="comment-item" id="comment-	{% if comment.user.userprofile.profile_picture %}
+                      <img src="{{ comment.user.userprofile.profile_picture.url }}" alt="{{ comment.user.username }}">
+                    {% else %}
+                      <img src="https://srmistvdp.edu.in/wp-content/uploads/2024/07/dummy-profile-pic-female-300n300.jpeg" alt="Default Profile">
+                    {% endif %}
                       <div>
                         <span>{{ comment.user.username }}</span>
                         <p>{{ comment.text }}</p>
@@ -794,14 +793,23 @@
       }
     };
     function applyTheme() {
-      document.body.className = currentTheme;
-      document.getElementById("sidebar").className = currentTheme === "dark" ? "dark" : "";
+      document.body.classList.remove("light", "dark");
+      document.body.classList.add(currentTheme);
+      document.getElementById("themeSwitch").checked = currentTheme === "dark";
       document.querySelectorAll(".card").forEach(card => {
-        card.className = card.classList.contains("product-card") ? `card product-card ${currentTheme} text-decoration-none` :
-          card.classList.contains("post-card") ? `card post-card ${currentTheme}` :
-          card.classList.contains("savings-card") ? `card savings-card ${currentTheme}` :
-          card.classList.contains("welcome-card") ? `card welcome-card ${currentTheme}` :
-          `card ${currentTheme}`;
+        card.classList.remove("light", "dark");
+        card.classList.add(currentTheme);
+        if (card.classList.contains("product-card")) {
+          card.className = `card product-card ${currentTheme} text-decoration-none`;
+        } else if (card.classList.contains("post-card")) {
+          card.className = `card post-card ${currentTheme}`;
+        } else if (card.classList.contains("savings-card")) {
+          card.className = `card savings-card ${currentTheme}`;
+        } else if (card.classList.contains("welcome-card")) {
+          card.className = `card welcome-card ${currentTheme}`;
+        } else {
+          card.className = `card ${currentTheme}`;
+        }
       });
       localStorage.setItem("theme", currentTheme);
     }
