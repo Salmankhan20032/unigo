@@ -5,9 +5,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = "django-insecure-unigo-secret-key-2025"
 
-DEBUG = True  # Change to False in production
+DEBUG = False  # Change to False in production
 
-ALLOWED_HOSTS = ["your-app-name.onrender.com", "127.0.0.1", "localhost"]
+ALLOWED_HOSTS = ["*"]
 
 # Application definition
 INSTALLED_APPS = [
